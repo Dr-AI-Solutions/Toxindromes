@@ -1,0 +1,112 @@
+import React, { useState } from 'react';
+
+const toxidromesData = {
+  Normal: {
+    fc: { valor: '60-100 lpm', estado: 'normal' },
+    fr: { valor: '12-20 rpm', estado: 'normal' },
+    pa: { valor: 'Normal', estado: 'normal' },
+    temp: { valor: 'Normotermia', estado: 'normal' },
+    pupilas: { valor: 'Isocóricas, reactivas', estado: 'normal' },
+    piel: { valor: 'Normal, seca', estado: 'normal' },
+    ruidos: { valor: 'Presentes, normales', estado: 'normal' }
+  },
+  Colinérgico: {
+    fc: { valor: 'Bradicardia (Baja)', estado: 'bajo' },
+    fr: { valor: 'Taquipnea / Broncorrea', estado: 'alto' },
+    pa: { valor: 'Variable', estado: 'normal' },
+    temp: { valor: 'Normal', estado: 'normal' },
+    pupilas: { valor: 'Miosis (Puntiformes)', estado: 'bajo' },
+    piel: { valor: 'Diaforesis profusa, lagrimeo', estado: 'alto' },
+    ruidos: { valor: 'Hiperactivos', estado: 'alto' }
+  },
+  Anticolinérgico: {
+    fc: { valor: 'Taquicardia (Alta)', estado: 'alto' },
+    fr: { valor: 'Normal a Alta', estado: 'alto' },
+    pa: { valor: 'Hipertensión (Alta)', estado: 'alto' },
+    temp: { valor: 'Hipertermia (Alta)', estado: 'alto' },
+    pupilas: { valor: 'Midriasis (Dilatadas)', estado: 'alto' },
+    piel: { valor: 'Seca, caliente y rubicunda', estado: 'peligro' },
+    ruidos: { valor: 'Ausentes / Íleo', estado: 'bajo' }
+  },
+  Simpaticomimético: {
+    fc: { valor: 'Taquicardia severa', estado: 'alto' },
+    fr: { valor: 'Taquipnea (Alta)', estado: 'alto' },
+    pa: { valor: 'Hipertensión severa', estado: 'alto' },
+    temp: { valor: 'Hipertermia (Alta)', estado: 'alto' },
+    pupilas: { valor: 'Midriasis (Dilatadas)', estado: 'alto' },
+    piel: { valor: 'Diaforesis (Sudorosa)', estado: 'peligro' },
+    ruidos: { valor: 'Aumentados', estado: 'alto' }
+  },
+  Opioide: {
+    fc: { valor: 'Bradicardia (Baja)', estado: 'bajo' },
+    fr: { valor: 'Depresión respiratoria (Muy baja)', estado: 'peligro' },
+    pa: { valor: 'Hipotensión (Baja)', estado: 'bajo' },
+    temp: { valor: 'Hipotermia (Baja)', estado: 'bajo' },
+    pupilas: { valor: 'Miosis (Puntiformes)', estado: 'bajo' },
+    piel: { valor: 'Fría', estado: 'bajo' },
+    ruidos: { valor: 'Disminuidos', estado: 'bajo' }
+  }
+};
+
+const SimuladorToxindromes = () => {
+  const [estadoActual, setEstadoActual] = useState('Normal');
+
+  const getColorClass = (estado) => {
+    switch (estado) {
+      case 'alto': return 'bg-red-100 text-red-800 border-red-300';
+      case 'bajo': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'peligro': return 'bg-purple-100 text-purple-800 border-purple-300';
+      default: return 'bg-gray-50 text-gray-800 border-gray-200';
+    }
+  };
+
+  const datos = toxidromesData[estadoActual];
+
+  return (
+    <div className="p-6 max-w-4xl mx-auto bg-white rounded-xl shadow-lg font-sans">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Simulador de Toxíndromes</h2>
+      
+      {/* Botones de Selección */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {Object.keys(toxidromesData).map((tox) => (
+          <button
+            key={tox}
+            onClick={() => setEstadoActual(tox)}
+            className={`px-4 py-2 rounded-md font-semibold transition-colors ${
+              estadoActual === tox 
+                ? 'bg-blue-600 text-white shadow-md' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {tox}
+          </button>
+        ))}
+      </div>
+
+      {/* Dashboard de Signos Clínicos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <DashboardCard titulo="Frecuencia Cardíaca" dato={datos.fc} colorClass={getColorClass(datos.fc.estado)} icono="❤️" />
+        <DashboardCard titulo="Frecuencia Respiratoria" dato={datos.fr} colorClass={getColorClass(datos.fr.estado)} icono="🫁" />
+        <DashboardCard titulo="Presión Arterial" dato={datos.pa} colorClass={getColorClass(datos.pa.estado)} icono="🩸" />
+        <DashboardCard titulo="Temperatura" dato={datos.temp} colorClass={getColorClass(datos.temp.estado)} icono="🌡️" />
+        <DashboardCard titulo="Pupilas" dato={datos.pupilas} colorClass={getColorClass(datos.pupilas.estado)} icono="👁️" />
+        <DashboardCard titulo="Piel / Mucosas" dato={datos.piel} colorClass={getColorClass(datos.piel.estado)} icono="🤚" />
+        <DashboardCard titulo="Ruidos Intestinales" dato={datos.ruidos} colorClass={getColorClass(datos.ruidos.estado)} icono="🩺" />
+
+      </div>
+    </div>
+  );
+};
+
+const DashboardCard = ({ titulo, dato, colorClass, icono }) => (
+  <div className={`p-4 rounded-lg border-2 transition-all duration-300 ${colorClass}`}>
+    <div className="flex items-center gap-2 mb-2">
+      <span className="text-xl">{icono}</span>
+      <h3 className="font-bold text-sm uppercase tracking-wider">{titulo}</h3>
+    </div>
+    <p className="text-lg font-medium">{dato.valor}</p>
+  </div>
+);
+
+export default SimuladorToxindromes;
