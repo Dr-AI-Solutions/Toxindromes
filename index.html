@@ -1,10 +1,15 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es" class="light"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor de Toxíndromes - Urgencias</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configuración de Tailwind para soportar modo oscuro por clase
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <style>
         .pupil-container {
             display: flex;
@@ -18,12 +23,25 @@
             border: 3px solid #cbd5e1;
             box-shadow: inset 0 4px 6px rgba(0,0,0,0.1);
             position: relative;
+            transition: all 0.3s ease;
         }
+        /* Ajustes de pupila para modo oscuro */
+        .dark .pupil-container {
+            background-color: #12131a;
+            border-color: #4b5563;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.4);
+        }
+
         .pupil {
             background-color: #0f172a;
             border-radius: 50%;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        /* Ajustes de pupila para modo oscuro */
+        .dark .pupil {
+            background-color: #f1f5f9;
+        }
+
         .pupil-normal { width: 40px; height: 40px; }
         .pupil-miosis { width: 14px; height: 14px; }
         .pupil-midriasis { width: 85px; height: 85px; }
@@ -37,33 +55,44 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Etiquetas de alerta de texto */
-        .alert-high { color: #b91c1c; font-weight: 700; background-color: #fee2e2; padding: 0.2rem 0.5rem; border-radius: 0.25rem; }
-        .alert-low { color: #1d4ed8; font-weight: 700; background-color: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 0.25rem; }
-        .alert-normal { color: #15803d; font-weight: 600; padding: 0.2rem 0; }
+        /* Etiquetas de alerta de texto (universales para ambos temas) */
+        .alert-high { color: #dc2626; font-weight: 700; } /* red-600 */
+        .alert-low { color: #2563eb; font-weight: 700; }  /* blue-600 */
+        .alert-normal { color: #16a34a; font-weight: 600; } /* green-600 */
     </style>
 </head>
-<body class="bg-slate-100 p-4 md:p-8 font-sans text-slate-800">
+<body class="bg-slate-100 dark:bg-[#12131a] p-4 md:p-8 font-sans text-slate-800 dark:text-gray-100 transition-colors duration-300">
 
     <div class="max-w-5xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Monitor Rápido de Toxíndromes</h1>
-            <p class="text-slate-600 mt-2 text-lg">Reconocimiento visual de signos clínicos en el reanimador</p>
+        <header class="mb-8 flex justify-between items-center">
+            <div class="text-center flex-grow">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Monitor Rápido de Toxíndromes</h1>
+                <p class="text-slate-600 dark:text-gray-400 mt-2 text-lg">Reconocimiento visual de signos clínicos en el reanimador</p>
+            </div>
+            
+            <button onclick="toggleTheme()" class="w-12 h-12 p-3 bg-white dark:bg-[#1a1b23] rounded-full shadow-sm border border-slate-200 dark:border-gray-700 flex items-center justify-center text-slate-500 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition active:scale-95">
+                <svg id="theme-sun" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-full h-full block dark:hidden">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                </svg>
+                <svg id="theme-moon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-full h-full hidden dark:block">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+            </button>
         </header>
 
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-3 justify-center" id="controls">
-            <button onclick="setState('normal')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="normal">Normal</button>
-            <button onclick="setState('colinergico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="colinergico">Colinérgico</button>
-            <button onclick="setState('anticolinergico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="anticolinergico">Anticolinérgico</button>
-            <button onclick="setState('simpaticomimetico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="simpaticomimetico">Simpaticomimético</button>
-            <button onclick="setState('opioide')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="opioide">Opioide</button>
+        <div class="bg-white dark:bg-[#1a1b23] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 mb-6 flex flex-wrap gap-3 justify-center" id="controls">
+            <button onclick="setState('normal')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition duration-200 active:scale-95" data-state="normal">Normal</button>
+            <button onclick="setState('colinergico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition duration-200 active:scale-95" data-state="colinergico">Colinérgico</button>
+            <button onclick="setState('anticolinergico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition duration-200 active:scale-95" data-state="anticolinergico">Anticolinérgico</button>
+            <button onclick="setState('simpaticomimetico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition duration-200 active:scale-95" data-state="simpaticomimetico">Simpaticomimético</button>
+            <button onclick="setState('opioide')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition duration-200 active:scale-95" data-state="opioide">Opioide</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1 lg:col-span-2">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-5">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
+            <div class="bg-white dark:bg-[#1a1b23] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 col-span-1 lg:col-span-2 transition-colors">
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-gray-800 pb-3 mb-5">
+                    <h2 class="text-xl font-bold flex items-center gap-2 text-slate-800 dark:text-white">
                         <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                         Signos Vitales
                     </h2>
@@ -71,26 +100,26 @@
                 </div>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 flex flex-col justify-start h-32">
-                        <span class="text-sm uppercase tracking-wider text-slate-500 mb-1 font-medium">Frecuencia Cardíaca</span>
-                        <div class="mt-auto mb-auto"><span id="val-fc" class="text-2xl inline-block">--</span></div>
+                    <div class="bg-slate-50 dark:bg-[#242530] p-4 rounded-lg border border-slate-100 dark:border-gray-700 flex flex-col justify-start h-32 transition-colors">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1 font-medium">Frecuencia Cardíaca</span>
+                        <div class="mt-auto mb-auto"><span id="val-fc" class="text-2xl inline-block text-slate-800 dark:text-gray-100">--</span></div>
                     </div>
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 flex flex-col justify-start h-32">
-                        <span class="text-sm uppercase tracking-wider text-slate-500 mb-1 font-medium">Presión Arterial</span>
-                        <div class="mt-auto mb-auto"><span id="val-pa" class="text-2xl inline-block">--</span></div>
+                    <div class="bg-slate-50 dark:bg-[#242530] p-4 rounded-lg border border-slate-100 dark:border-gray-700 flex flex-col justify-start h-32 transition-colors">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1 font-medium">Presión Arterial</span>
+                        <div class="mt-auto mb-auto"><span id="val-pa" class="text-2xl inline-block text-slate-800 dark:text-gray-100">--</span></div>
                     </div>
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 flex flex-col justify-start h-32">
-                        <span class="text-sm uppercase tracking-wider text-slate-500 mb-1 font-medium">Frec. Respiratoria</span>
-                        <div class="mt-auto mb-auto"><span id="val-fr" class="text-2xl inline-block">--</span></div>
+                    <div class="bg-slate-50 dark:bg-[#242530] p-4 rounded-lg border border-slate-100 dark:border-gray-700 flex flex-col justify-start h-32 transition-colors">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1 font-medium">Frec. Respiratoria</span>
+                        <div class="mt-auto mb-auto"><span id="val-fr" class="text-2xl inline-block text-slate-800 dark:text-gray-100">--</span></div>
                     </div>
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 flex flex-col justify-start h-32">
-                        <span class="text-sm uppercase tracking-wider text-slate-500 mb-1 font-medium">Temperatura</span>
-                        <div class="mt-auto mb-auto"><span id="val-temp" class="text-2xl inline-block">--</span></div>
+                    <div class="bg-slate-50 dark:bg-[#242530] p-4 rounded-lg border border-slate-100 dark:border-gray-700 flex flex-col justify-start h-32 transition-colors">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1 font-medium">Temperatura</span>
+                        <div class="mt-auto mb-auto"><span id="val-temp" class="text-2xl inline-block text-slate-800 dark:text-gray-100">--</span></div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col justify-center items-center relative">
+            <div class="bg-white dark:bg-[#1a1b23] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 text-center flex flex-col justify-center items-center relative transition-colors">
                 
                 <div id="sensory-icon-container" class="mb-3 w-12 h-12 flex items-center justify-center icon-pop">
                     </div>
@@ -106,16 +135,16 @@
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1 lg:col-span-3">
-                <h2 class="text-xl font-bold border-b border-slate-100 pb-3 mb-5 text-slate-800">El Factor Diferenciador: La Piel</h2>
+            <div class="bg-white dark:bg-[#1a1b23] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 col-span-1 lg:col-span-3 transition-colors">
+                <h2 class="text-xl font-bold border-b border-slate-100 dark:border-gray-800 pb-3 mb-5 text-slate-800 dark:text-white">El Factor Diferenciador: La Piel</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 rounded-lg border border-slate-100 gap-2 sm:gap-4 min-h-[5rem]">
-                        <div class="w-full sm:w-1/3 text-slate-500 text-sm uppercase tracking-wider font-medium">Humedad / Axilas</div>
-                        <div id="val-piel" class="w-full sm:w-2/3 text-lg font-medium">--</div>
+                    <div class="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 dark:bg-[#242530] rounded-lg border border-slate-100 dark:border-gray-700 gap-2 sm:gap-4 min-h-[5rem] transition-colors">
+                        <div class="w-full sm:w-1/3 text-slate-500 dark:text-gray-400 text-sm uppercase tracking-wider font-medium">Humedad / Axilas</div>
+                        <div id="val-piel" class="w-full sm:w-2/3 text-lg font-medium text-slate-800 dark:text-gray-100">--</div>
                     </div>
-                    <div class="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 rounded-lg border border-slate-100 gap-2 sm:gap-4 min-h-[5rem]">
-                        <div class="w-full sm:w-1/3 text-slate-500 text-sm uppercase tracking-wider font-medium">Ruidos Intestinales</div>
-                        <div id="val-ruidos" class="w-full sm:w-2/3 text-lg font-medium">--</div>
+                    <div class="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 dark:bg-[#242530] rounded-lg border border-slate-100 dark:border-gray-700 gap-2 sm:gap-4 min-h-[5rem] transition-colors">
+                        <div class="w-full sm:w-1/3 text-slate-500 dark:text-gray-400 text-sm uppercase tracking-wider font-medium">Ruidos Intestinales</div>
+                        <div id="val-ruidos" class="w-full sm:w-2/3 text-lg font-medium text-slate-800 dark:text-gray-100">--</div>
                     </div>
                 </div>
             </div>
@@ -124,21 +153,22 @@
     </div>
 
     <script>
-        // Íconos SVG Sensoriales para el panel de pupilas
+        // Íconos SVG Sensoriales para el panel de pupilas (con color de tema integrado)
         const sensoryIcons = {
-            normal: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-emerald-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
-            colinergico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-blue-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>', // Gota outline
-            anticolinergico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-red-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>', // Sol outline
-            simpaticomimetico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>', // Rayo outline
-            opioide: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-indigo-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>' // Luna outline
+            normal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-emerald-600 dark:text-emerald-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
+            // NUEVO ICONO DE GOTA SÓLIDA DEFINITIVA
+            colinergico: '<svg viewBox="0 0 24 24" fill="currentColor" class="text-blue-600 dark:text-blue-500 w-full h-full"><path d="M12 2.1c-.263 0-.5.148-.611.39A44.024 44.024 0 0 1 10.25 6c-.718 1.437-1.39 2.898-2.022 4.4a10.5 10.5 0 0 0-1.478 5.35c0 2.87 2.378 5.2 5.25 5.2s5.25-2.33 5.25-5.2c0-1.895-.494-3.676-1.478-5.35A44.024 44.024 0 0 1 13.75 6c-.35-.7-.718-1.437-1.111-2.11C12.5 3.648 12.263 3.5 12 3.5v-1.4z"/></svg>',
+            anticolinergico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-red-600 dark:text-red-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>',
+            simpaticomimetico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-600 dark:text-amber-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>',
+            opioide: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-indigo-600 dark:text-indigo-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>'
         };
 
         const data = {
             normal: {
                 badgeText: 'ESTADO ESTABLE',
-                badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                badgeClass: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
                 alertText: 'Signos en rango fisiológico',
-                alertClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                alertClass: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
                 fc: { val: '75 lpm', status: 'alert-normal' },
                 pa: { val: '120/80 mmHg', status: 'alert-normal' },
                 fr: { val: '16 rpm', status: 'alert-normal' },
@@ -150,23 +180,23 @@
             },
             colinergico: {
                 badgeText: 'COLINÉRGICO',
-                badgeClass: 'bg-blue-50 text-blue-700 border-blue-200',
+                badgeClass: 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
                 alertText: 'Alerta: Falla Respiratoria / Secreciones',
-                alertClass: 'bg-red-50 text-red-700 border-red-200',
-                fc: { val: '45 lpm (Bradicardia)', status: 'alert-low' },
+                alertClass: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
+                fc: { val: '45 lpm Bradicardia)', status: 'alert-low' },
                 pa: { val: '100/60 mmHg', status: 'alert-low' },
                 fr: { val: '26 rpm (Broncorrea)', status: 'alert-high' },
                 temp: { val: '36.5 °C', status: 'alert-normal' },
                 pupilaClass: 'pupil-miosis',
                 pupilaText: 'Miosis (1.0mm)',
-                piel: { val: 'Profusamente sudorosa (Todo gotea)', status: 'alert-high' },
+                piel: { val: 'Profusamente sudorosa Todo gotea)', status: 'alert-high' },
                 ruidos: { val: 'Hiperactivos (Cólicos/Diarrea)', status: 'alert-high' }
             },
             anticolinergico: {
                 badgeText: 'ANTICOLINÉRGICO',
-                badgeClass: 'bg-red-50 text-red-700 border-red-200',
+                badgeClass: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
                 alertText: 'Alerta: Agitación e Hipertermia',
-                alertClass: 'bg-red-50 text-red-700 border-red-200',
+                alertClass: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
                 fc: { val: '135 lpm (Taquicardia)', status: 'alert-high' },
                 pa: { val: '150/90 mmHg', status: 'alert-high' },
                 fr: { val: '22 rpm (Taquipnea)', status: 'alert-high' },
@@ -178,25 +208,25 @@
             },
             simpaticomimetico: {
                 badgeText: 'SIMPATICOMIMÉTICO',
-                badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+                badgeClass: 'bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
                 alertText: 'Alerta: Crisis Hipertensiva',
-                alertClass: 'bg-red-50 text-red-700 border-red-200',
+                alertClass: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
                 fc: { val: '150 lpm (Taquicardia)', status: 'alert-high' },
                 pa: { val: '185/110 mmHg (Hipertensiva)', status: 'alert-high' },
                 fr: { val: '28 rpm (Taquipnea)', status: 'alert-high' },
                 temp: { val: '38.8 °C (Hipertermia)', status: 'alert-high' },
                 pupilaClass: 'pupil-midriasis',
                 pupilaText: 'Midriasis (8.0mm)',
-                piel: { val: 'Empapada en sudor (Diaforesis)', status: 'alert-high' },
+                piel: { val: 'Empapada en sudor Diaforesis)', status: 'alert-high' },
                 ruidos: { val: 'Normales o aumentados', status: 'alert-normal' }
             },
             opioide: {
                 badgeText: 'OPIOIDE',
-                badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                badgeClass: 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
                 alertText: 'Alerta: Depresión Respiratoria',
-                alertClass: 'bg-red-50 text-red-700 border-red-200',
+                alertClass: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
                 fc: { val: '50 lpm (Bradicardia)', status: 'alert-low' },
-                pa: { val: '90/50 mmHg (Hipotensión)', status: 'alert-low' },
+                pa: { val: '90/50 mmHg Hipotensión)', status: 'alert-low' },
                 fr: { val: '6 rpm (Depresión respiratoria)', status: 'alert-low' },
                 temp: { val: '35.5 °C (Hipotermia)', status: 'alert-low' },
                 pupilaClass: 'pupil-miosis',
@@ -211,12 +241,14 @@
             
             // UI de los botones
             document.querySelectorAll('.btn-state').forEach(btn => {
-                btn.classList.remove('bg-slate-800', 'text-white', 'shadow-md');
-                btn.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+                // Clases desactivadas (Claro y Oscuro)
+                btn.classList.remove('bg-slate-800', 'text-white', 'shadow-md', 'dark:bg-emerald-600', 'dark:text-black');
+                btn.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'dark:bg-[#242530]', 'dark:text-gray-300', 'dark:hover:bg-[#34374a]');
             });
             const activeBtn = document.querySelector(`[data-state="${stateKey}"]`);
-            activeBtn.classList.remove('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
-            activeBtn.classList.add('bg-slate-800', 'text-white', 'shadow-md');
+            // Clases activadas (Claro y Oscuro)
+            activeBtn.classList.remove('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'dark:bg-[#242530]', 'dark:text-gray-300', 'dark:hover:bg-[#34374a]');
+            activeBtn.classList.add('bg-slate-800', 'text-white', 'shadow-md', 'dark:bg-emerald-600', 'dark:text-black');
 
             // Actualizar Badge del Título
             const diagBadge = document.getElementById('diagnostic-badge');
@@ -226,7 +258,6 @@
             // Inyectar y animar el Ícono Sensorial
             const iconContainer = document.getElementById('sensory-icon-container');
             iconContainer.innerHTML = sensoryIcons[stateKey];
-            // Reiniciar la animación
             iconContainer.classList.remove('icon-pop');
             void iconContainer.offsetWidth; // trigger reflow
             iconContainer.classList.add('icon-pop');
@@ -257,8 +288,11 @@
             const pupilaText = document.getElementById('val-pupila-texto');
             pupilaText.innerText = state.pupilaText;
             pupilaText.className = 'font-bold text-lg mb-3 transition-colors duration-300';
-            if (stateKey === 'normal') pupilaText.classList.add('text-emerald-700');
-            else pupilaText.classList.add('text-slate-800');
+            if (stateKey === 'normal') {
+                pupilaText.classList.add('text-emerald-700', 'dark:text-emerald-400');
+            } else {
+                pupilaText.classList.add('text-slate-800', 'dark:text-white');
+            }
 
             // Actualizar Badge de Alerta en la tarjeta de la pupila
             const alertBadge = document.getElementById('alert-badge');
@@ -266,8 +300,28 @@
             alertBadge.className = `mt-auto w-full py-2 px-3 rounded border text-[10px] md:text-xs font-bold uppercase tracking-wide transition-colors duration-300 ${state.alertClass}`;
         }
 
-        // Cargar estado inicial
-        window.onload = () => setState('normal');
+        // Lógica de cambio de tema
+        function toggleTheme() {
+            const htmlHtml = document.documentElement;
+            if (htmlHtml.classList.contains('dark')) {
+                htmlHtml.classList.remove('dark');
+                htmlHtml.classList.add('light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                htmlHtml.classList.remove('light');
+                htmlHtml.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Recuperar preferencia al cargar
+        window.onload = () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.className = savedTheme;
+            }
+            setState('normal');
+        };
     </script>
 </body>
 </html>
