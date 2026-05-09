@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Toxidromes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Transiciones suaves para las pupilas del SVG */
+        .pupil-transition {
+            transition: r 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Estilos personalizados para el select */
+        select {
+            background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+        }
+    </style>
+</head>
+<body class="bg-[#12131a] text-white font-sans min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-3xl bg-[#1a1b23] rounded-3xl p-6 md:p-8 shadow-2xl border border-gray-800 flex flex-col justify-between min-h-[650px]">
+        
+        <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b border-gray-800/60 pb-6">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Explorador de Toxidromes</h1>
+                <p id="val-piel-ruidos" class="text-xs text-gray-400 mt-1.5 font-medium">
+                    Piel: Normal | Ruidos Intestinales: Normales
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-x-6 gap-y-1 text-right self-end md:self-auto">
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider text-gray-500 font-bold block">FC</span>
+                    <span id="val-fc" class="text-base font-bold text-gray-100 block">75 lpm</span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider text-gray-500 font-bold block">FR</span>
+                    <span id="val-fr" class="text-base font-bold text-gray-100 block">16 rpm</span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider text-gray-500 font-bold block">PA</span>
+                    <span id="val-pa" class="text-base font-bold text-gray-100 block">120/80</span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider text-gray-500 font-bold block">TEMP</span>
+                    <span id="val-temp" class="text-base font-bold text-gray-100 block">36.8 °C</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow flex flex-col items-center justify-center py-8 relative">
+            
+            <div class="absolute top-4 bg-[#12131a] border border-gray-700/80 rounded-full px-4 py-1 flex items-center gap-2 shadow-lg z-10">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span id="val-pupila-texto" class="text-[10px] font-bold uppercase tracking-wider text-gray-300">PUPILAS: 4.0MM</span>
+            </div>
+
+            <div class="w-72 h-72 md:w-80 md:h-80 my-4">
+                <svg viewBox="0 0 200 200" class="w-full h-full">
+                    <circle cx="100" cy="110" r="75" fill="#242530" stroke="#5a5d7a" stroke-width="1.5" />
+                    
+                    <ellipse cx="65" cy="100" rx="19" ry="12" fill="#ffffff" />
+                    <circle cx="65" cy="100" r="11" fill="#4fa3f7" /> <circle id="pupila-izq" cx="65" cy="100" r="5" fill="#000000" class="pupil-transition" /> <circle cx="61" cy="96" r="2" fill="#ffffff" opacity="0.8" /> <ellipse cx="135" cy="100" rx="19" ry="12" fill="#ffffff" />
+                    <circle cx="135" cy="100" r="11" fill="#4fa3f7" /> <circle id="pupila-der" cx="135" cy="100" r="5" fill="#000000" class="pupil-transition" /> <circle cx="131" cy="96" r="2" fill="#ffffff" opacity="0.8" /> <path d="M 88,135 Q 100,143 112,135" stroke="#5a5d7a" stroke-width="1.5" fill="none" stroke-linecap="round" />
+                </svg>
+            </div>
+
+            <div class="text-center">
+                <h2 class="text-xs uppercase tracking-widest text-gray-500 font-bold">Estado Clínico</h2>
+                <p id="val-estado-titulo" class="text-2xl font-bold mt-1 text-gray-100">Toxidrome: Normal</p>
+            </div>
+        </main>
+
+        <footer class="border-t border-gray-800/60 pt-6 flex flex-col sm:flex-row items-center gap-4">
+            <div class="w-full sm:w-auto flex items-center gap-3">
+                <span class="text-sm text-gray-400 font-medium whitespace-nowrap">Estado Clínico</span>
+                <div class="relative w-full sm:w-60">
+                    <select id="state-select" onchange="setState(this.value)" class="w-full bg-[#12131a] border border-gray-700 text-sm font-semibold rounded-xl py-3 pl-4 pr-10 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+                        <option value="normal">Normal</option>
+                        <option value="colinergico">Colinérgico</option>
+                        <option value="anticolinergico">Anticolinérgico</option>
+                        <option value="simpaticomimetico">Simpaticomimético</option>
+                        <option value="opioide">Opioide</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="resetApp()" class="w-full sm:w-auto sm:ml-auto bg-[#2b2d3d] hover:bg-[#34374a] text-gray-300 font-semibold text-sm py-3 px-8 rounded-xl transition active:scale-95">
+                Reiniciar
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        const data = {
+            normal: {
+                fc: '75 lpm',
+                fr: '16 rpm',
+                pa: '120/80',
+                temp: '36.8 °C',
+                piel: 'Normal',
+                ruidos: 'Normales',
+                pupilaRadius: 5, // Radio intermedio
+                pupilaText: 'PUPILAS: 4.0MM',
+                titulo: 'Toxidrome: Normal'
+            },
+            colinergico: {
+                fc: '45 lpm',
+                fr: '24 rpm',
+                pa: '100/60',
+                temp: '36.5 °C',
+                piel: 'Diaforesis (Sudorosa)',
+                ruidos: 'Hiperactivos',
+                pupilaRadius: 2, // Miosis
+                pupilaText: 'PUPILAS: 1.0MM',
+                titulo: 'Toxidrome: Colinérgico'
+            },
+            anticolinergico: {
+                fc: '130 lpm',
+                fr: '22 rpm',
+                pa: '150/90',
+                temp: '39.0 °C',
+                piel: 'Seca y caliente',
+                ruidos: 'Ausentes (Íleo)',
+                pupilaRadius: 10, // Midriasis
+                pupilaText: 'PUPILAS: 8.0MM',
+                titulo: 'Toxidrome: Anticolinérgico'
+            },
+            simpaticomimetico: {
+                fc: '145 lpm',
+                fr: '26 rpm',
+                pa: '180/110',
+                temp: '38.5 °C',
+                piel: 'Diaforesis (Sudorosa)',
+                ruidos: 'Activos',
+                pupilaRadius: 10, // Midriasis
+                pupilaText: 'PUPILAS: 8.0MM',
+                titulo: 'Toxidrome: Simpaticomimético'
+            },
+            opioide: {
+                fc: '50 lpm',
+                fr: '6 rpm',
+                pa: '90/50',
+                temp: '35.5 °C',
+                piel: 'Fría y pálida',
+                ruidos: 'Disminuidos',
+                pupilaRadius: 2, // Miosis puntiforme
+                pupilaText: 'PUPILAS: 1.0MM',
+                titulo: 'Toxidrome: Opioide'
+            }
+        };
+
+        function setState(stateKey) {
+            const state = data[stateKey];
+
+            // 1. Actualizar los parámetros de Signos Vitales
+            document.getElementById('val-fc').innerText = state.fc;
+            document.getElementById('val-fr').innerText = state.fr;
+            document.getElementById('val-pa').innerText = state.pa;
+            document.getElementById('val-temp').innerText = state.temp;
+
+            // 2. Actualizar Piel y Ruidos en el header
+            document.getElementById('val-piel-ruidos').innerText = `Piel: ${state.piel} | Ruidos Intestinales: ${state.ruidos}`;
+
+            // 3. Modificar interactivamente el tamaño de las pupilas dentro del SVG
+            document.getElementById('pupila-izq').setAttribute('r', state.pupilaRadius);
+            document.getElementById('pupila-der').setAttribute('r', state.pupilaRadius);
+
+            // 4. Actualizar textos de información
+            document.getElementById('val-pupila-texto').innerText = state.pupilaText;
+            document.getElementById('val-estado-titulo').innerText = state.titulo;
+
+            // 5. Sincronizar el elemento select por si acaso
+            document.getElementById('state-select').value = stateKey;
+        }
+
+        function resetApp() {
+            setState('normal');
+        }
+
+        // Inicializar la aplicación con el estado normal al cargar
+        window.onload = () => {
+            setState('normal');
+        };
+    </script>
+</body>
+</html>
