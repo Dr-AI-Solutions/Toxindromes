@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Toxíndromes - Urgencias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        /* Contenedor del Ojo - Simula la Esclerótica */
+        .sclera-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 120px;
+            width: 120px;
+            margin: 0 auto;
+            border-radius: 50%;
+            position: relative;
+            background-color: #f8fafc;
+            border: 4px solid #cbd5e1;
+            box-shadow: inset 0 6px 8px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        /* Simulación del Iris fijo */
+        .iris {
+            position: absolute;
+            height: 100px;
+            width: 100px;
+            border-radius: 50%;
+            background-image: 
+                radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.1) 100%),
+                repeating-conic-gradient(from 0deg, #7dd3fc 0% 1deg, #0369a1 1deg 5deg, #1e3a8a 5deg 10deg);
+            background-blend-mode: overlay;
+            border: 1px solid rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        /* Brillo Corneal (glare) */
+        .iris::before {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.8);
+            filter: blur(1px);
+            z-index: 10;
+        }
+
+        /* Pupila Dinámica (1mm = 10px de ancho/alto) */
+        .pupil {
+            background-color: #000000;
+            border-radius: 50%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        
+        /* Tamaños proporcionales a los mm solicitados */
+        .pupil-normal { width: 40px; height: 40px; } /* 4.0 mm */
+        .pupil-colinergico { width: 15px; height: 15px; } /* 1.5 mm */
+        .pupil-anticolinergico { width: 80px; height: 80px; } /* 8.0 mm */
+        .pupil-simpaticomimetico { width: 75px; height: 75px; } /* 7.5 mm */
+        .pupil-opioide { width: 10px; height: 10px; } /* 1.0 mm */
+        
+        /* Animación suave para el ícono central */
+        .icon-pop {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Estilos Adaptativos para Modo Oscuro */
+        html.dark .sclera-container { background-color: #e2e8f0; border-color: #cbd5e1; }
+        html.dark .alert-high { color: #fca5a5; background-color: rgba(153, 27, 27, 0.4); }
+        html.dark .alert-low { color: #93c5fd; background-color: rgba(30, 58, 138, 0.4); }
+        html.dark .alert-normal { color: #4ade80; }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 p-4 md:p-8 font-sans text-slate-800 dark:text-slate-200 transition-colors duration-300 min-h-screen">
+
+    <div class="max-w-5xl mx-auto">
+        
+        <header class="mb-8 text-center relative flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Monitor Rápido de Toxíndromes</h1>
+                <p class="text-slate-600 dark:text-slate-400 mt-2 text-lg">Reconocimiento visual de signos clínicos en el reanimador</p>
+            </div>
+            
+            <button onclick="toggleTheme()" class="p-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700 transition">
+                <svg id="theme-icon-light" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>
+                <svg id="theme-icon-dark" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+            </button>
+        </header>
+
+        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow border border-slate-200 dark:border-slate-700 mb-6 flex flex-wrap gap-3 justify-center transition-colors duration-300" id="controls">
+            <button onclick="setState('normal')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="normal">Normal</button>
+            <button onclick="setState('colinergico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="colinergico">Colinérgico</button>
+            <button onclick="setState('anticolinergico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="anticolinergico">Anticolinérgico</button>
+            <button onclick="setState('simpaticomimetico')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="simpaticomimetico">Simpaticomimético</button>
+            <button onclick="setState('opioide')" class="btn-state px-5 py-2.5 rounded-lg font-semibold transition-colors duration-200" data-state="opioide">Opioide</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow border border-slate-200 dark:border-slate-700 col-span-1 lg:col-span-2 transition-colors duration-300">
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3 mb-5">
+                    <h2 class="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                        <svg class="w-6 h-6 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        Signos Vitales
+                    </h2>
+                    <span id="diagnostic-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border">Normal</span>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50 flex flex-col justify-start h-32 transition-colors duration-300">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-medium">Frecuencia Cardíaca</span>
+                        <div class="mt-auto mb-auto"><span id="val-fc" class="text-2xl md:text-3xl inline-block font-semibold">--</span></div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50 flex flex-col justify-start h-32 transition-colors duration-300">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-medium">Presión Arterial</span>
+                        <div class="mt-auto mb-auto"><span id="val-pa" class="text-2xl md:text-3xl inline-block font-semibold">--</span></div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50 flex flex-col justify-start h-32 transition-colors duration-300">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-medium">Frec. Respiratoria</span>
+                        <div class="mt-auto mb-auto"><span id="val-fr" class="text-2xl md:text-3xl inline-block font-semibold">--</span></div>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-lg border border-slate-100 dark:border-slate-700/50 flex flex-col justify-start h-32 transition-colors duration-300">
+                        <span class="text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1 font-medium">Temperatura</span>
+                        <div class="mt-auto mb-auto"><span id="val-temp" class="text-2xl md:text-3xl inline-block font-semibold">--</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow border border-slate-200 dark:border-slate-700 text-center flex flex-col justify-center items-center relative transition-colors duration-300">
+                
+                <div id="sensory-icon-container" class="mb-2 w-10 h-10 flex items-center justify-center icon-pop"></div>
+
+                <div id="val-pupila-size-badge" class="px-3 py-1 mb-4 rounded-full border border-slate-300 dark:border-slate-600 text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300 shadow-sm">
+                    PUPILAS: --
+                </div>
+
+                <div class="sclera-container mb-4">
+                    <div class="iris">
+                        <div id="val-pupila-visual" class="pupil"></div>
+                    </div>
+                </div>
+                
+                <span id="val-pupila-texto" class="font-bold text-xl mb-3">--</span>
+
+                <div id="alert-badge" class="mt-auto w-full py-2 px-3 rounded border text-[11px] md:text-xs font-bold uppercase tracking-wide">
+                    --
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow border border-slate-200 dark:border-slate-700 col-span-1 lg:col-span-3 transition-colors duration-300">
+                <h2 class="text-xl font-bold border-b border-slate-100 dark:border-slate-700 pb-3 mb-5 text-slate-900 dark:text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    El Factor Diferenciador: La Piel
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-100 dark:border-slate-700/50 gap-2 sm:gap-4 min-h-[5rem] transition-colors duration-300">
+                        <div class="w-full sm:w-1/3 text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider font-medium">Humedad / Axilas</div>
+                        <div id="val-piel" class="w-full sm:w-2/3 text-xl font-semibold text-slate-800 dark:text-slate-200">--</div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center p-4 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-100 dark:border-slate-700/50 gap-2 sm:gap-4 min-h-[5rem] transition-colors duration-300">
+                        <div class="w-full sm:w-1/3 text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider font-medium">Ruidos Intestinales</div>
+                        <div id="val-ruidos" class="w-full sm:w-2/3 text-xl font-semibold text-slate-800 dark:text-slate-200">--</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('theme-icon-light').classList.toggle('hidden', !isDark);
+            document.getElementById('theme-icon-dark').classList.toggle('hidden', isDark);
+        }
+
+        const sensoryIcons = {
+            normal: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-emerald-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>',
+            colinergico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-blue-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5.5c-3.142 2.358-6 5.666-6 8.385a6 6 0 0012 0c0-2.719-2.858-6.027-6-8.385z" /></svg>', 
+            anticolinergico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-red-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>',
+            simpaticomimetico: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-amber-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>',
+            opioide: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-indigo-500 w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>'
+        };
+
+        const data = {
+            normal: {
+                badgeText: 'ESTADO ESTABLE',
+                badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800',
+                alertText: 'Signos en rango fisiológico',
+                alertClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-400 dark:border-emerald-800',
+                fc: { val: '80 lpm', status: 'alert-normal' },
+                pa: { val: '120/80 mmHg', status: 'alert-normal' },
+                fr: { val: '16 rpm', status: 'alert-normal' },
+                temp: { val: '36.5 °C', status: 'alert-normal' },
+                pupilaClass: 'pupil-normal',
+                pupilaSizeBadge: 'PUPILAS: 4.0MM',
+                pupilaText: 'Isocóricas (Normal)',
+                piel: { val: 'Tibia y seca (Fisiológica)', status: 'alert-normal' },
+                ruidos: { val: 'Presentes, tono normal', status: 'alert-normal' }
+            },
+            colinergico: {
+                badgeText: 'COLINÉRGICO',
+                badgeClass: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800',
+                alertText: 'Alerta: Falla Respiratoria / Broncorrea',
+                alertClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
+                fc: { val: '50 lpm', status: 'alert-low' },
+                pa: { val: '110/70 mmHg', status: 'alert-low' },
+                fr: { val: '26 rpm', status: 'alert-high' },
+                temp: { val: '36.5 °C', status: 'alert-normal' },
+                pupilaClass: 'pupil-colinergico',
+                pupilaSizeBadge: 'PUPILAS: 1.5MM',
+                pupilaText: 'Miosis Puntiforme',
+                piel: { val: 'Profusamente sudorosa (Diaforesis)', status: 'alert-high' },
+                ruidos: { val: 'Hiperactivos (Diarrea)', status: 'alert-high' }
+            },
+            anticolinergico: {
+                badgeText: 'ANTICOLINÉRGICO',
+                badgeClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
+                alertText: 'Alerta: Agitación e Hipertermia',
+                alertClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
+                fc: { val: '130 lpm', status: 'alert-high' },
+                pa: { val: '150/95 mmHg', status: 'alert-high' },
+                fr: { val: '18 rpm', status: 'alert-normal' },
+                temp: { val: '39.5 °C', status: 'alert-high' },
+                pupilaClass: 'pupil-anticolinergico',
+                pupilaSizeBadge: 'PUPILAS: 8.0MM',
+                pupilaText: 'Midriasis No Reactiva',
+                piel: { val: 'Totalmente seca, roja y caliente', status: 'alert-high' },
+                ruidos: { val: 'Ausentes o disminuidos (Íleo)', status: 'alert-low' }
+            },
+            simpaticomimetico: {
+                badgeText: 'SIMPATICOMIMÉTICO',
+                badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800',
+                alertText: 'Alerta: Crisis Hipertensiva',
+                alertClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
+                fc: { val: '150 lpm', status: 'alert-high' },
+                pa: { val: '170/110 mmHg', status: 'alert-high' },
+                fr: { val: '24 rpm', status: 'alert-high' },
+                temp: { val: '38.5 °C', status: 'alert-high' },
+                pupilaClass: 'pupil-simpaticomimetico',
+                pupilaSizeBadge: 'PUPILAS: 7.5MM',
+                pupilaText: 'Midriasis Reactiva',
+                piel: { val: 'Empapada en sudor (Diaforesis)', status: 'alert-high' },
+                ruidos: { val: 'Normales o aumentados', status: 'alert-normal' }
+            },
+            opioide: {
+                badgeText: 'OPIOIDE',
+                badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-400 dark:border-indigo-800',
+                alertText: 'Alerta: Depresión Respiratoria Crítica',
+                alertClass: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-800',
+                fc: { val: '45 lpm', status: 'alert-low' },
+                pa: { val: '90/60 mmHg', status: 'alert-low' },
+                fr: { val: '8 rpm', status: 'alert-low' },
+                temp: { val: '35.0 °C', status: 'alert-low' },
+                pupilaClass: 'pupil-opioide',
+                pupilaSizeBadge: 'PUPILAS: 1.0MM',
+                pupilaText: 'Miosis Puntiforme',
+                piel: { val: 'Fría, pálida o cianótica', status: 'alert-low' },
+                ruidos: { val: 'Disminuidos (Constipación)', status: 'alert-low' }
+            }
+        };
+
+        function setState(stateKey) {
+            const state = data[stateKey];
+            
+            // UI de los botones adaptada para dark mode
+            document.querySelectorAll('.btn-state').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white', 'shadow-md', 'dark:bg-slate-100', 'dark:text-slate-900');
+                btn.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'dark:bg-slate-700', 'dark:text-slate-300', 'dark:hover:bg-slate-600');
+            });
+            const activeBtn = document.querySelector(`[data-state="${stateKey}"]`);
+            activeBtn.classList.remove('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300', 'dark:bg-slate-700', 'dark:text-slate-300', 'dark:hover:bg-slate-600');
+            activeBtn.classList.add('bg-slate-800', 'text-white', 'shadow-md', 'dark:bg-slate-100', 'dark:text-slate-900');
+
+            // Actualizar Badge del Título
+            const diagBadge = document.getElementById('diagnostic-badge');
+            diagBadge.innerText = state.badgeText;
+            diagBadge.className = `px-3 py-1 rounded-full text-xs font-bold tracking-wider border transition-colors duration-300 ${state.badgeClass}`;
+
+            // Inyectar y animar el Ícono Sensorial
+            const iconContainer = document.getElementById('sensory-icon-container');
+            iconContainer.innerHTML = sensoryIcons[stateKey];
+            iconContainer.classList.remove('icon-pop');
+            void iconContainer.offsetWidth;
+            iconContainer.classList.add('icon-pop');
+
+            // Actualizar textos de constantes vitales
+            const updateUI = (elementId, field) => {
+                const el = document.getElementById(elementId);
+                el.innerText = field.val;
+                el.className = `text-2xl md:text-3xl inline-block font-semibold ${field.status}`;
+            };
+            const updateSubUI = (elementId, field) => {
+                const el = document.getElementById(elementId);
+                el.innerText = field.val;
+                el.className = `w-full sm:w-2/3 text-xl mt-1 sm:mt-0 font-semibold ${field.status}`;
+            };
+
+            updateUI('val-fc', state.fc);
+            updateUI('val-pa', state.pa);
+            updateUI('val-fr', state.fr);
+            updateUI('val-temp', state.temp);
+            updateSubUI('val-piel', state.piel);
+            updateSubUI('val-ruidos', state.ruidos);
+
+            // Actualizar Etiqueta del tamaño de pupila
+            const pupilaSizeBadge = document.getElementById('val-pupila-size-badge');
+            pupilaSizeBadge.innerText = state.pupilaSizeBadge;
+
+            // Animar la pupila dinámicamente
+            const pupilaVis = document.getElementById('val-pupila-visual');
+            pupilaVis.className = `pupil ${state.pupilaClass}`;
+            
+            // Texto descriptivo de la pupila
+            const pupilaText = document.getElementById('val-pupila-texto');
+            pupilaText.innerText = state.pupilaText;
+            pupilaText.className = 'font-bold text-xl mb-3 transition-colors duration-300';
+            if (stateKey === 'normal') pupilaText.classList.add('text-emerald-700', 'dark:text-emerald-400');
+            else pupilaText.classList.add('text-slate-900', 'dark:text-slate-100');
+
+            // Actualizar Badge de Alerta Clínica
+            const alertBadge = document.getElementById('alert-badge');
+            alertBadge.innerText = state.alertText;
+            alertBadge.className = `mt-auto w-full py-2 px-3 rounded border text-[11px] md:text-xs font-bold uppercase tracking-wide transition-colors duration-300 ${state.alertClass}`;
+        }
+
+        window.onload = () => setState('normal');
+    </script>
+</body>
+</html>
